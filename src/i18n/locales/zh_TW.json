@@ -1,0 +1,6 @@
+{
+  "plugin_name": "SuperFlow",
+  "button_process": "立即處理",
+  "ui_title": "SuperFlow 已啟動",
+  "ui_description": "SuperFlow 正在運行。點擊“立即處理”以執行映射和外掛程式。"
+}

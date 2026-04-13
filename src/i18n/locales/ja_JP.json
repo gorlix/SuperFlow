@@ -1,0 +1,6 @@
+{
+  "plugin_name": "SuperFlow",
+  "button_process": "今すぐ処理",
+  "ui_title": "SuperFlow アクティブ",
+  "ui_description": "SuperFlowが実行中です。「今すぐ処理」を押してマッピングとアドオンを実行します。"
+}
