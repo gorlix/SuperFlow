@@ -3,7 +3,7 @@
 Welcome to the **SuperFlow** repository! 
 
 > **The "Vibecoded" Declaration**
-> SuperFlow is proudly an **AI-Assisted / Vibecoded** project. We actively encourage the use of LLMs, agentic assistants, and generative AI to write, refactor, and architect this codebase. 
+> SuperFlow is proudly an **AI-Assisted / Vibecoded** project. We actively encourage the use of **Google Antigravity** to write, refactor, and architect this codebase. 
 > 
 > However, "vibecoded" does not mean sloppy. We welcome Pull Requests from both human engineers and AI agents, provided that **all code strictly adheres to the high-quality architectural and documentation standards** outlined in this manifesto.
 
@@ -34,7 +34,7 @@ Code maintainability and an exceptional Developer Experience (DX) are non-negoti
 
 ## ⚙️ The Mandatory AI Workflow
 
-To maintain the integrity of this codebase, **ANY AI Agent** working on this repository MUST strictly follow this mandatory 4-Step Process:
+To maintain the integrity of this codebase, **Google Antigravity** (and any other AI Agent) working on this repository MUST strictly follow this mandatory 4-Step Process:
 
 **Step 1: Codebase Analysis**
 Stop and read. You must thoroughly analyze the current context, the `README.md`, and these guidelines before writing a single line of code.
