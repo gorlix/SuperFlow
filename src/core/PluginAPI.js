@@ -1,4 +1,4 @@
-import {PluginCommAPI, PluginFileAPI} from 'sn-plugin-lib';
+import {PluginCommAPI, PluginFileAPI, PluginNoteAPI} from 'sn-plugin-lib';
 import RNFS from 'react-native-fs';
 
 /**
@@ -119,6 +119,19 @@ export default class PluginAPI {
    */
   static async injectKeyword(notePath, page, keyword) {
     const res = await PluginFileAPI.insertKeyWord(notePath, page, keyword);
+    return res.success === true;
+  }
+
+  /**
+   * Injects a Title or Heading securely into the given note.
+   * @async
+   * @param {string} notePath Absolute target file path.
+   * @param {number} page 0-based page index.
+   * @param {string} titleText The text to inject as title.
+   * @returns {Promise<boolean>} True if successfully injected.
+   */
+  static async injectTitle(notePath, page, titleText) {
+    const res = await PluginNoteAPI.setTitle(notePath, page, titleText);
     return res.success === true;
   }
 }

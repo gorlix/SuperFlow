@@ -1,4 +1,6 @@
 import PluginAPI from '../core/PluginAPI';
+import InjectKeywordAddon from './core/InjectKeywordAddon';
+import CreateTitleAddon from './core/CreateTitleAddon';
 
 /**
  * @class AddonManager
@@ -79,6 +81,16 @@ class AddonManager {
       injectKeyword: async (path, page, keyword) => {
         return PluginAPI.injectKeyword(path, page, keyword);
       },
+      /**
+       * Proxy to physically inject a Title.
+       * @param {string} path Target .note file path.
+       * @param {number} page 0-indexed page number.
+       * @param {string} title Real text to inject as Title.
+       * @returns {Promise<boolean>} Success of insertion.
+       */
+      injectTitle: async (path, page, title) => {
+        return PluginAPI.injectTitle(path, page, title);
+      },
     };
 
     /** @type {import('./BaseAddon').ExecutePayload} */
@@ -98,4 +110,8 @@ class AddonManager {
   }
 }
 
-export default new AddonManager();
+const manager = new AddonManager();
+manager.registerAddon(new InjectKeywordAddon());
+manager.registerAddon(new CreateTitleAddon());
+
+export default manager;
