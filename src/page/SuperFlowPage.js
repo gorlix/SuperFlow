@@ -49,19 +49,20 @@ const SuperFlowPage = () => {
         logString += `Failed API Discovery: ${err.message}\n`;
       }
 
-      // 2. Null-Safety Guardrails
-      let layerData = [];
-      if (PluginNoteAPI && typeof PluginNoteAPI.getLayerData === 'function') {
-        const rawData = await PluginNoteAPI.getLayerData(ctx.path, ctx.pageNum);
-        layerData = rawData || [];
-      } else {
-        logString +=
-          'SKIPPING PluginNoteAPI.getLayerData: Method is undefined.\n';
+      // 2. Diagnostic Stroke Call (Replacing invalid getLayerData)
+      let strokeData = [];
+      try {
+        logString += 'Fetching strokes via PluginAPI.getRawStrokes...\n';
+        strokeData =
+          (await PluginAPI.getRawStrokes(ctx.path, ctx.pageNum)) || [];
+        logString += `Strokes retrieved: ${strokeData.length}\n`;
+        logString += `Raw Data Sample: ${JSON.stringify(strokeData).substring(
+          0,
+          150,
+        )}\n`;
+      } catch (err) {
+        logString += `Failed to get strokes: ${err.message}\n`;
       }
-      logString +=
-        'LayerData received: ' +
-        JSON.stringify(layerData).substring(0, 100) +
-        '\n';
 
       await SpatialMappingEngine.processActivePage();
       logString += 'Mapping completed.\n';
