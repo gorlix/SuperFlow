@@ -48,46 +48,86 @@ export default class PluginAPI {
    * @throws {Error} If fetching file elements fails.
    */
   static async getRawStrokes(notePath, pageIndex) {
-    console.log('[PluginAPI] Triggering saveCurrentNote before array fetch...');
+    let diag = '=== PATH NORMALIZATION & BYPASS DIAGNOSTIC ===\n';
+
     if (PluginNoteAPI && typeof PluginNoteAPI.saveCurrentNote === 'function') {
       try {
         await PluginNoteAPI.saveCurrentNote();
+        diag += '[Sync] saveCurrentNote() succeeded.\n';
       } catch (e) {
-        console.warn(`[PluginAPI] saveCurrentNote failed: ${e.message}`);
+        diag += `[Sync] saveCurrentNote() failed: ${e.message}\n`;
       }
     }
 
-    console.log(
-      `[PluginAPI] getElements args -> page: ${pageIndex}, path: ${notePath}`,
-    );
-    const res = await PluginFileAPI.getElements(pageIndex, notePath);
-    console.log(
-      `[PluginAPI] getElements raw response: ${JSON.stringify(res).substring(
-        0,
-        300,
-      )}`,
-    );
-
-    if (!res || !res.success) {
-      throw new Error(
-        `getElements failed on ${notePath}: ${
-          res?.error?.message || JSON.stringify(res)
-        }`,
-      );
+    diag += `\n[FS] Target Absolute: ${notePath}\n`;
+    try {
+      const exists = await RNFS.exists(notePath);
+      diag += `[FS] Permissions/Exists Check: ${exists}\n`;
+    } catch (e) {
+      diag += `[FS] Exists Check Error: ${e.message}\n`;
     }
 
-    const allElements = res.result || [];
-    console.log(`[PluginAPI] Total elements in page: ${allElements.length}`);
-
-    if (allElements.length > 0) {
-      const types = allElements.map(el => el.type).join(', ');
-      console.log(`[PluginAPI] Element types found: ${types}`);
+    try {
+      const docSizeRes = await PluginFileAPI.getNoteTotalPageNum(notePath);
+      diag += `[SDK] Bounds Check (Total Pages): ${JSON.stringify(
+        docSizeRes,
+      )}\n`;
+    } catch (e) {
+      diag += `[SDK] Bounds Check Error: ${e.message}\n`;
     }
 
-    // Filter to retain only stroke elements (type === 0, or trail logic)
-    const strokes = allElements.filter(el => el.type === 0);
-    console.log(`[PluginAPI] Filtered Stroke count: ${strokes.length}`);
-    return strokes;
+    // Path variations
+    const absolutePath = notePath;
+    const userSpacePath = notePath.replace('/storage/emulated/0/', '');
+    const relativePath = '../' + notePath.split('/').slice(-2).join('/'); // basic fallback
+
+    diag += '\n--- SDK CALLS ---\n';
+    const resAbsolute = await PluginFileAPI.getElements(
+      pageIndex,
+      absolutePath,
+    );
+    diag += `1. Absolute Path [${absolutePath}]: ${
+      resAbsolute?.result?.length !== undefined
+        ? resAbsolute.result.length + ' elements'
+        : JSON.stringify(resAbsolute).substring(0, 50)
+    }\n`;
+
+    const resUserSpace = await PluginFileAPI.getElements(
+      pageIndex,
+      userSpacePath,
+    );
+    diag += `2. User-Space Path [${userSpacePath}]: ${
+      resUserSpace?.result?.length !== undefined
+        ? resUserSpace.result.length + ' elements'
+        : JSON.stringify(resUserSpace).substring(0, 50)
+    }\n`;
+
+    const resRel = await PluginFileAPI.getElements(pageIndex, relativePath);
+    diag += `3. Relative Path [${relativePath}]: ${
+      resRel?.result?.length !== undefined
+        ? resRel.result.length + ' elements'
+        : JSON.stringify(resRel).substring(0, 50)
+    }\n`;
+
+    diag += '\n--- NATIVE BRIDGE BYPASS ---\n';
+    const {NativeModules} = require('react-native');
+    try {
+      if (NativeModules.NativePluginAPI) {
+        const bypassRes = await NativeModules.NativePluginAPI.getElements(
+          pageIndex,
+          notePath,
+        );
+        const bypassStr = JSON.stringify(bypassRes).substring(0, 150);
+        const bypassLen = bypassRes?.result?.length;
+        diag += `-> NativeModule output (len: ${bypassLen}): ${bypassStr}\n`;
+      } else {
+        diag += '-> NativePluginAPI missing from NativeModules\n';
+      }
+    } catch (e) {
+      diag += `-> Native Bypass Crash: ${e.message}\n`;
+    }
+
+    throw new Error('DIAGNOSTIC HALT\n' + diag);
   }
 
   /**
