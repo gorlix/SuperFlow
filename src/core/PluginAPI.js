@@ -48,86 +48,25 @@ export default class PluginAPI {
    * @throws {Error} If fetching file elements fails.
    */
   static async getRawStrokes(notePath, pageIndex) {
-    let diag = '=== PATH NORMALIZATION & BYPASS DIAGNOSTIC ===\n';
-
     if (PluginNoteAPI && typeof PluginNoteAPI.saveCurrentNote === 'function') {
       try {
         await PluginNoteAPI.saveCurrentNote();
-        diag += '[Sync] saveCurrentNote() succeeded.\n';
       } catch (e) {
-        diag += `[Sync] saveCurrentNote() failed: ${e.message}\n`;
+        console.warn(`[PluginAPI] saveCurrentNote failed: ${e.message}`);
       }
     }
 
-    diag += `\n[FS] Target Absolute: ${notePath}\n`;
-    try {
-      const exists = await RNFS.exists(notePath);
-      diag += `[FS] Permissions/Exists Check: ${exists}\n`;
-    } catch (e) {
-      diag += `[FS] Exists Check Error: ${e.message}\n`;
-    }
+    const response = await PluginFileAPI.getElements(pageIndex, notePath);
+    const allElements =
+      response && Array.isArray(response.result) ? response.result : [];
 
-    try {
-      const docSizeRes = await PluginFileAPI.getNoteTotalPageNum(notePath);
-      diag += `[SDK] Bounds Check (Total Pages): ${JSON.stringify(
-        docSizeRes,
-      )}\n`;
-    } catch (e) {
-      diag += `[SDK] Bounds Check Error: ${e.message}\n`;
-    }
-
-    // Path variations
-    const absolutePath = notePath;
-    const userSpacePath = notePath.replace('/storage/emulated/0/', '');
-    const relativePath = '../' + notePath.split('/').slice(-2).join('/'); // basic fallback
-
-    diag += '\n--- SDK CALLS ---\n';
-    const resAbsolute = await PluginFileAPI.getElements(
-      pageIndex,
-      absolutePath,
+    // Filter to retain only stroke elements (type === 0, or trail logic)
+    const strokes = allElements.filter(el => el.type === 0);
+    console.log(
+      `SuperFlow: Successfully retrieved ${strokes.length} elements from page ${pageIndex}.`,
     );
-    diag += `1. Absolute Path [${absolutePath}]: ${
-      resAbsolute?.result?.length !== undefined
-        ? resAbsolute.result.length + ' elements'
-        : JSON.stringify(resAbsolute).substring(0, 50)
-    }\n`;
 
-    const resUserSpace = await PluginFileAPI.getElements(
-      pageIndex,
-      userSpacePath,
-    );
-    diag += `2. User-Space Path [${userSpacePath}]: ${
-      resUserSpace?.result?.length !== undefined
-        ? resUserSpace.result.length + ' elements'
-        : JSON.stringify(resUserSpace).substring(0, 50)
-    }\n`;
-
-    const resRel = await PluginFileAPI.getElements(pageIndex, relativePath);
-    diag += `3. Relative Path [${relativePath}]: ${
-      resRel?.result?.length !== undefined
-        ? resRel.result.length + ' elements'
-        : JSON.stringify(resRel).substring(0, 50)
-    }\n`;
-
-    diag += '\n--- NATIVE BRIDGE BYPASS ---\n';
-    const {NativeModules} = require('react-native');
-    try {
-      if (NativeModules.NativePluginAPI) {
-        const bypassRes = await NativeModules.NativePluginAPI.getElements(
-          pageIndex,
-          notePath,
-        );
-        const bypassStr = JSON.stringify(bypassRes).substring(0, 150);
-        const bypassLen = bypassRes?.result?.length;
-        diag += `-> NativeModule output (len: ${bypassLen}): ${bypassStr}\n`;
-      } else {
-        diag += '-> NativePluginAPI missing from NativeModules\n';
-      }
-    } catch (e) {
-      diag += `-> Native Bypass Crash: ${e.message}\n`;
-    }
-
-    throw new Error('DIAGNOSTIC HALT\n' + diag);
+    return strokes;
   }
 
   /**
