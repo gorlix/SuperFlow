@@ -1,6 +1,8 @@
 import React, {useCallback, useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {useTranslation} from 'react-i18next';
+import RNFS from 'react-native-fs';
+import {PluginManager, PluginNoteAPI} from 'sn-plugin-lib';
 
 // Internal Core Modules (Decoupled from UI)
 import SpatialMappingEngine from '../core/SpatialMappingEngine';
@@ -19,13 +21,43 @@ const SuperFlowPage = () => {
 
   // Root Navigation states: 'dashboard' | 'settings'
   const [currentView, setCurrentView] = useState('dashboard');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   /**
    * Orchestrates the mapping process when the user taps "Process Now".
    */
   const handleProcessActions = useCallback(async () => {
-    console.log('[SuperFlowPage] Processing triggered on Dashboard.');
-    await SpatialMappingEngine.processActivePage();
+    setIsProcessing(true);
+    let logString = '\n--- PROCESS TRIGGERED ---\n';
+    try {
+      console.log('[SuperFlowPage] Processing triggered on Dashboard.');
+      logString += 'Process Started.\n';
+
+      const ctx = await PluginAPI.getActiveContext();
+      logString += `Context OK. Path: ${ctx.path}\n`;
+
+      // Debug Goal: Understand if the API is returning data from the Note page.
+      const layerData = await PluginNoteAPI.getLayerData(ctx.path, ctx.pageNum);
+      logString += `PluginNoteAPI.getLayerData() returned: ${
+        layerData
+          ? JSON.stringify(layerData).substring(0, 500)
+          : 'null/undefined'
+      }\n`;
+
+      await SpatialMappingEngine.processActivePage();
+      logString += 'Mapping completed.\n';
+    } catch (e) {
+      logString += `Mapping Error: ${e.message}\nStack: ${e.stack}\n`;
+      console.error('[SuperFlowPage] Process Error:', e);
+    } finally {
+      setIsProcessing(false);
+      try {
+        const logFile = `${RNFS.ExternalStorageDirectoryPath}/SUPERFLOW_CRASH.txt`;
+        await RNFS.appendFile(logFile, logString, 'utf8');
+      } catch (fsErr) {
+        console.warn('Failed to append log:', fsErr);
+      }
+    }
   }, []);
 
   /**
@@ -58,6 +90,13 @@ const SuperFlowPage = () => {
     setCurrentView('dashboard');
   };
 
+  /**
+   *
+   */
+  const handleExit = () => {
+    PluginManager.closePlugin();
+  };
+
   if (currentView === 'settings') {
     return <SuperFlowSettings onExit={closeSettings} />;
   }
@@ -65,25 +104,35 @@ const SuperFlowPage = () => {
   // Pure E-ink Dashboard Route
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('ui_title') || 'SuperFlow Engine'}</Text>
+      <TouchableOpacity style={styles.exitButton} onPress={handleExit}>
+        <Text style={styles.exitButtonText}>{t('ui_close', 'X')}</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.title}>{t('ui_title', 'SuperFlow Engine')}</Text>
       <Text style={styles.description}>
-        {t('ui_description') ||
-          'Automate mapped spatial logic workflows dynamically.'}
+        {t(
+          'ui_description',
+          'Automate mapped spatial logic workflows dynamically.',
+        )}
       </Text>
 
       <TouchableOpacity
         style={styles.buttonMain}
-        onPress={handleProcessActions}>
+        onPress={handleProcessActions}
+        disabled={isProcessing}>
         <Text style={styles.buttonTextMain}>
-          {t('button_process') || 'Process Active Page'}
+          {isProcessing
+            ? t('button_processing', 'Processing...')
+            : t('button_process', 'Process Active Page')}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.buttonConfig}
-        onPress={handleLearnTemplate}>
+        onPress={handleLearnTemplate}
+        disabled={isProcessing}>
         <Text style={styles.buttonTextConfig}>
-          {t('button_settings') || 'Learn Template Map'}
+          {t('button_settings', 'Learn Template Map')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -97,6 +146,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#ffffff', // High Contrast
+  },
+  exitButton: {
+    position: 'absolute',
+    top: 30, // Account for plugin top padding
+    right: 30,
+    backgroundColor: '#000000',
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exitButtonText: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 28,
