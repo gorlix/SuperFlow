@@ -8,7 +8,7 @@ import ja from './locales/ja_JP.json';
 import {PluginManager} from 'sn-plugin-lib';
 
 const resources = {
-  'en': {
+  en: {
     translation: en,
   },
   'zh-CN': {
@@ -17,7 +17,7 @@ const resources = {
   'zh-TW': {
     translation: zhHant,
   },
-  'ja': {
+  ja: {
     translation: ja,
   },
 };
@@ -27,10 +27,14 @@ console.log(locales, 'localeslocaleslocales');
 let systemLanguage = locales[0]?.languageTag || 'en'; // Default language is English
 // Get system language
 PluginManager.registerLangListener({
+  /**
+   *
+   * @param msg
+   */
   onMsg: msg => {
     console.log('lange change:' + msg.lang);
     const nextLng = msg.lang.replace('_', '-');
-    if(nextLng !== i18n.language) {
+    if (nextLng !== i18n.language) {
       i18n.changeLanguage(nextLng).catch(err => {
         console.warn('i18n.changeLanguage failed:', err);
       });
