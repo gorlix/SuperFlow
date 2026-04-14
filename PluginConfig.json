@@ -1,20 +1,23 @@
 {
-    "pluginID": "plugin_superflow",
-    "pluginKey": "plugin_superflow",
-    "iconPath": "./assets/icon.png",
-    "desc": {
-        "en": "An automation plugin to turn paper notes into digital workflows.",
-        "zh_CN": "一款将纸质笔记转化为数字工作流的自动化插件。",
-        "zh_TW": "一款將紙質筆記轉化為數字工作流的自動化插件。",
-        "ja": "紙のメモをデジタルワークフローに変換する自動化プラグイン。"
-    },
-    "name": {
-        "en": "SuperFlow",
-        "zh_CN": "SuperFlow",
-        "zh_TW": "SuperFlow",
-        "ja": "SuperFlow"
-    },
-    "versionName": "0.1.0",
-    "versionCode": "1",
-    "jsMainPath": "index"
+  "pluginID": "plugin_superflow",
+  "pluginKey": "plugin_superflow",
+  "author": "SuperFlow Team",
+  "iconPath": "./assets/icon/icon.png",
+  "versionName": "0.1.0-alpha",
+  "versionCode": "1",
+  "jsMainPath": "index",
+  "name": {
+    "en": "SuperFlow",
+    "it": "SuperFlow",
+    "zh_CN": "SuperFlow",
+    "zh_TW": "SuperFlow",
+    "ja": "SuperFlow"
+  },
+  "desc": {
+    "en": "The ultimate automation engine. Turn handwritten paper notes into actionable digital workflows.",
+    "it": "Il motore di automazione definitivo. Trasforma gli appunti cartacei in workflow digitali.",
+    "zh_CN": "终极自动化引擎。将手写纸质笔记转化为可执行的数字工作流。",
+    "zh_TW": "終極自動化引擎。將手寫紙質筆記轉化為可執行的數字工作流。",
+    "ja": "究極の自動化エンジン。手書きの紙のメモを実用的なデジタルワークフローに変換します。"
+  }
 }
