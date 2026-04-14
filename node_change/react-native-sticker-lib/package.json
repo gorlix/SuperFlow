@@ -1,0 +1,29 @@
+{
+    "name": "react-native-sticker-lib",
+    "version": "0.0.1",
+    "description": "Add numbers with TurboModules",
+    "react-native": "js/index",
+    "source": "js/index",
+    "files": [
+      "src",
+      "android",
+      "!android/build",
+      "!**/__tests__",
+      "!**/__fixtures__",
+      "!**/__mocks__"
+    ],
+    "keywords": ["react-native", "ios", "android"],
+    "devDependencies": {},
+    "peerDependencies": {
+      "react": "*",
+      "react-native": "*"
+    },
+    "codegenConfig": {
+      "name": "ReactNativeStickerLibSpec",
+      "type": "all",
+      "jsSrcsDir": "src",
+      "android": {
+        "javaPackageName": "com.ratta.supernote.plugin.sticker.lib"
+      }
+    }
+  }

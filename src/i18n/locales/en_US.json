@@ -1,0 +1,6 @@
+{
+  "plugin_name": "SuperFlow",
+  "button_process": "Process Now",
+  "ui_title": "SuperFlow Active",
+  "ui_description": "SuperFlow is running. Press 'Process Now' to execute mapping and add-ons."
+}
