@@ -1,6 +1,11 @@
 import i18n from '../i18n';
 import Constant from './Constant';
 
+/**
+ *
+ * @param path
+ * @param newGroupId
+ */
 export function splitBySecondLastSlash(path, newGroupId) {
   console.log(path, newGroupId, 'splitBySecondLastSlash');
   const regex = /sticker_group_\d+/g; // Match legacy identifier pattern
@@ -9,6 +14,10 @@ export function splitBySecondLastSlash(path, newGroupId) {
 }
 
 // Extract file name
+/**
+ *
+ * @param path
+ */
 export const extractFileName = path => {
   // Match file name (excluding path and extension)
   const match = path.match(/([^/]*)\.[^.]+$/);
@@ -16,6 +25,10 @@ export const extractFileName = path => {
   return match ? match[1] : '';
 };
 
+/**
+ *
+ * @param fileName
+ */
 export function incrementFileName(fileName) {
   console.log(fileName, 'splitBySecondLastSlash');
 
@@ -41,6 +54,11 @@ export function incrementFileName(fileName) {
     return `${str[0]}1.${str[1]}`;
   }
 }
+/**
+ *
+ * @param str1
+ * @param str2
+ */
 export function findStrNum(str1, str2) {
   // Find the first index where strings differ in length or character
   let diffIndex = -1;
@@ -75,16 +93,29 @@ export function findStrNum(str1, str2) {
 const stickerNameTail = '_sticker';
 
 /// Get auto-generated sticker name when creating a sticker
+/**
+ *
+ * @param arr
+ * @param stickerGroupName
+ * @param extractor
+ */
 export const findNextAutoCreateStickerName = (
-  arr,// All stickers in the current group
+  arr, // All stickers in the current group
   stickerGroupName, // Current sticker group name
-  extractor = item => item.name) => {
-  console.log('findNextAutoCreateStickerName stickerGroupName', stickerGroupName);
+  extractor = item => item.name,
+) => {
+  console.log(
+    'findNextAutoCreateStickerName stickerGroupName',
+    stickerGroupName,
+  );
   let baseStr = stickerGroupName + stickerNameTail;
   // Truncate group name if the base name exceeds the max length
-  if(baseStr.length > Constant.maxInputNum) {
+  if (baseStr.length > Constant.maxInputNum) {
     var cutLength = baseStr.length - Constant.maxInputNum;
-    stickerGroupName = stickerGroupName.slice(0, stickerGroupName.length - cutLength);
+    stickerGroupName = stickerGroupName.slice(
+      0,
+      stickerGroupName.length - cutLength,
+    );
     baseStr = stickerGroupName + stickerNameTail;
   }
 
@@ -101,7 +132,7 @@ export const findNextAutoCreateStickerName = (
   const existingNumbers = arr
     .map(item => {
       const extractedStr = extractor(item).trim();
-      if(extractedStr === baseStr) {
+      if (extractedStr === baseStr) {
         return 0;
       }
       const match = extractedStr.match(/\(\d+\)$/);
@@ -112,11 +143,13 @@ export const findNextAutoCreateStickerName = (
       } else {
         return null;
       }
-
     })
     .filter(num => num !== null)
     .sort((a, b) => a - b); // Sort to find the first unused number
-  console.log('findNextAutoCreateStickerName existingNumbers:', existingNumbers);
+  console.log(
+    'findNextAutoCreateStickerName existingNumbers:',
+    existingNumbers,
+  );
   if (!existingNumbers || existingNumbers.length <= 0) {
     return baseStr;
   }
@@ -131,7 +164,8 @@ export const findNextAutoCreateStickerName = (
         return findNextAutoCreateStickerName(
           arr,
           stickerGroupName.slice(0, stickerGroupName.length - 1),
-          extractor);
+          extractor,
+        );
       }
 
       return `${baseStr}(${i})`;
@@ -140,6 +174,12 @@ export const findNextAutoCreateStickerName = (
   return baseStr + '(-1)';
 };
 
+/**
+ *
+ * @param arr
+ * @param baseStr
+ * @param extractor
+ */
 export const findNextEm = (arr, baseStr, extractor = item => item.name) => {
   if (
     !Array.isArray(arr) ||
@@ -153,21 +193,20 @@ export const findNextEm = (arr, baseStr, extractor = item => item.name) => {
     .map(item => {
       const extractedStr = extractor(item).trim();
       const match = extractedStr.match(/\(\d+\)$/);
-      if(match) {
+      if (match) {
         // Extract the number
         const matchNum = match[0].match(/\d+/);
         return matchNum ? parseInt(matchNum[0], 10) : null;
       } else {
         return null;
       }
-
     })
     .filter(num => num !== null)
     .sort((a, b) => a - b); // Sort to find the first unused number
-    console.log('findNextEm existingNumbers:', existingNumbers);
-    if(!existingNumbers || existingNumbers.length <= 0) {
-      return baseStr;
-    }
+  console.log('findNextEm existingNumbers:', existingNumbers);
+  if (!existingNumbers || existingNumbers.length <= 0) {
+    return baseStr;
+  }
 
   // Find the first unused number
   for (let i = 1; i <= 10000; i++) {
@@ -178,6 +217,11 @@ export const findNextEm = (arr, baseStr, extractor = item => item.name) => {
   }
   return baseStr + ' ' + baseStr;
 };
+/**
+ *
+ * @param arr
+ * @param baseStr
+ */
 export const findNext2Em = (arr, baseStr) => {
   if (
     !Array.isArray(arr) ||
@@ -199,6 +243,11 @@ export const findNext2Em = (arr, baseStr) => {
 };
 
 // Sort helper
+/**
+ *
+ * @param arr
+ * @param ascending
+ */
 export function sortByName(arr, ascending = true) {
   return arr.sort((a, b) => {
     if (ascending) {
@@ -209,6 +258,10 @@ export function sortByName(arr, ascending = true) {
   });
 }
 
+/**
+ *
+ * @param filePath
+ */
 export function extractFileInfo(filePath) {
   // Extract file name from path (excluding extension)
   const nameMatch = filePath.match(/([^\/]+)(?=\.[^\/]+$)/);
@@ -219,6 +272,10 @@ export function extractFileInfo(filePath) {
     path: filePath,
   };
 }
+/**
+ *
+ * @param num
+ */
 export function incrementIfDecimal(num) {
   // Check whether the input is a decimal
   if (Number.isInteger(num)) {
@@ -229,6 +286,10 @@ export function incrementIfDecimal(num) {
     return Math.round(num) + 1;
   }
 }
+/**
+ *
+ * @param input
+ */
 export const splitWhole = input => {
   // Find index of the last space
   const lastIndex = input.lastIndexOf(' ');
@@ -252,6 +313,12 @@ export const splitWhole = input => {
   // Otherwise return the whole string
   return input;
 };
+/**
+ *
+ * @param array
+ * @param title
+ * @param size
+ */
 const groupArray = (array, title, size) => {
   const result = [];
   for (let i = 0; i < array.length; i += size) {
@@ -260,6 +327,11 @@ const groupArray = (array, title, size) => {
   }
   return result;
 };
+/**
+ *
+ * @param arr
+ * @param chunkSize
+ */
 export const chunkArray = (arr, chunkSize) => {
   return arr.reduce((acc, curr, idx) => {
     const chunkIndex = Math.floor(idx / chunkSize);
@@ -272,6 +344,10 @@ export const chunkArray = (arr, chunkSize) => {
 };
 
 // Parse built-in sticker name JSON
+/**
+ *
+ * @param jsonStr
+ */
 export const parseNameJson = jsonStr => {
   try {
     let lang = i18n.language;
@@ -296,6 +372,11 @@ export const RegExpArr = {
     /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?(?:\u200d(?:[^\ud800-\udfff]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?)*/,
 };
 
+/**
+ *
+ * @param array
+ * @param chunkSize
+ */
 export const checkArray = (array, chunkSize) => {
   const result = [];
   for (let i = 0; i < array.length; i += chunkSize) {

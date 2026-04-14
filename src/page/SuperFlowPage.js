@@ -1,23 +1,22 @@
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import React, {useCallback} from 'react';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {useTranslation} from 'react-i18next';
 
 // Internal Core Modules (Decoupled from UI)
 import SpatialMappingEngine from '../core/SpatialMappingEngine';
 import PluginAPI from '../core/PluginAPI';
 
 /**
- * @fileoverview The primary React Native interface for SuperFlow.
+ * @file The primary React Native interface for SuperFlow.
  * This component acts as the user's manual trigger point, adhering to the
  * "0ms latency" constraint by only processing ink strokes when explicitly commanded.
  */
 const SuperFlowPage = () => {
-  const { t } = useTranslation();
+  const {t} = useTranslation();
 
   /**
    * Orchestrates the mapping process when the user taps "Process Now".
    * It bridges the PluginAPI (stroke fetching) with the SpatialMappingEngine (intersection logic).
-   *
    * @returns {Promise<void>}
    */
   const handleProcessActions = useCallback(async () => {
@@ -29,7 +28,9 @@ const SuperFlowPage = () => {
       // 2. Pass them to the pure mathematical engine for intersection evaluation.
       const intersections = SpatialMappingEngine.detectIntersections(strokes);
 
-      console.log(`[SuperFlowPage] Found ${intersections.length} action intersections.`);
+      console.log(
+        `[SuperFlowPage] Found ${intersections.length} action intersections.`,
+      );
 
       // 3. (Future) Route results to AddonManager for execution.
     } catch (error) {
