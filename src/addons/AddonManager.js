@@ -5,7 +5,7 @@ import PluginAPI from '../core/PluginAPI';
  * @description In-memory registry system compiling and routing Addon execution via the JSON engine.
  * It enforces safe execution by building the protected toolkit Payload before shipping to Addons.
  */
-export default class AddonManager {
+class AddonManager {
   /**
    * Instantiates an empty Addon Manager.
    * @class
@@ -70,17 +70,18 @@ export default class AddonManager {
     // Notice how we DO NOT pass the raw PluginAPI to prevent over-reach.
     const safeToolkit = {
       /**
-       *
-       * @param path
-       * @param page
-       * @param keyword
+       * Proxy to physically inject a keyword tag.
+       * @param {string} path Target .note file path.
+       * @param {number} page 0-indexed page number.
+       * @param {string} keyword Real text to embed into file.
+       * @returns {Promise<boolean>} Success of insertion.
        */
       injectKeyword: async (path, page, keyword) => {
         return PluginAPI.injectKeyword(path, page, keyword);
       },
     };
 
-    /** @type {ExecutePayload} */
+    /** @type {import('./BaseAddon').ExecutePayload} */
     const payload = {
       context: executionContext,
       toolkit: safeToolkit,
@@ -96,3 +97,5 @@ export default class AddonManager {
     }
   }
 }
+
+export default new AddonManager();
