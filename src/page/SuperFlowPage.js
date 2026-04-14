@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import RNFS from 'react-native-fs';
 import {PluginManager, PluginNoteAPI} from 'sn-plugin-lib';
+import * as AllSDK from 'sn-plugin-lib';
 
 // Internal Core Modules (Decoupled from UI)
 import SpatialMappingEngine from '../core/SpatialMappingEngine';
@@ -39,6 +40,8 @@ const SuperFlowPage = () => {
       // 1. SDK API Discovery (Critical)
       try {
         logString +=
+          'All SDK Exports: ' + Object.keys(AllSDK).join(', ') + '\n';
+        logString +=
           'Available API methods: ' +
           Object.keys(PluginNoteAPI || {}).join(', ') +
           '\n';
@@ -68,7 +71,9 @@ const SuperFlowPage = () => {
     } finally {
       setIsProcessing(false);
       try {
-        const logFile = `${RNFS.ExternalStorageDirectoryPath}/SUPERFLOW_CRASH.txt`;
+        const logDir = `${RNFS.ExternalStorageDirectoryPath}/MyStyle/Plugins`;
+        const logFile = `${logDir}/SuperFlow_Log.txt`;
+        await RNFS.mkdir(logDir);
         await RNFS.appendFile(logFile, logString, 'utf8');
       } catch (fsErr) {
         console.warn('Failed to append log:', fsErr);
@@ -148,7 +153,7 @@ const SuperFlowPage = () => {
         onPress={handleLearnTemplate}
         disabled={isProcessing}>
         <Text style={styles.buttonTextConfig}>
-          {t('button_settings', 'Learn Template Map')}
+          {t('button_settings', {defaultValue: 'Settings'})}
         </Text>
       </TouchableOpacity>
     </View>

@@ -11,7 +11,8 @@ import './src/i18n';
  */
 const runBootSequence = async () => {
   let logString = '--- SUPERFLOW BOOT ---\n';
-  const logFile = `${RNFS.ExternalStorageDirectoryPath}/SUPERFLOW_CRASH.txt`;
+  const logDir = `${RNFS.ExternalStorageDirectoryPath}/MyStyle/Plugins`;
+  const logFile = `${logDir}/SuperFlow_Log.txt`;
 
   try {
     const iconReq = require('./assets/icon/icon.png');
@@ -45,6 +46,7 @@ const runBootSequence = async () => {
     logString += `Stack: ${e.stack}\n`;
   } finally {
     try {
+      await RNFS.mkdir(logDir);
       await RNFS.writeFile(logFile, logString, 'utf8');
       console.log(`Wrote boot log to ${logFile}`);
     } catch (fsErr) {
