@@ -25,6 +25,13 @@ export default class BaseAddon {
   static id = 'base_addon';
 
   /**
+   * Defines the data-driven UI rendering for configuring this Addon in settings.
+   * SuperFlow will dynamically inject form fields based on this array mapping.
+   * @type {Array<object>}
+   */
+  static settingsSchema = [];
+
+  /**
    * A human-readable display name for the plugin settings UI mapping dropdown.
    * Must be overridden by subclasses.
    * @type {string}

@@ -12,6 +12,15 @@ export default class InjectKeywordAddon extends BaseAddon {
   static id = 'core.inject_keyword';
   static name = 'Add Keyword';
 
+  static settingsSchema = [
+    {
+      key: 'text',
+      type: 'string',
+      label: 'Keyword Text',
+      placeholder: 'Enter keyword to inject...',
+    },
+  ];
+
   /**
    * Dispatches the keyword injection logic ensuring total SDK separation via `toolkit`.
    * @async
