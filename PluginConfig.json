@@ -1,7 +1,7 @@
 {
   "pluginID": "plugin_superflow",
   "pluginKey": "plugin_superflow",
-  "author": "SuperFlow Team",
+  "author": "Gorlix",
   "iconPath": "./assets/icon/icon.png",
   "versionName": "0.1.0-alpha",
   "versionCode": "1",
