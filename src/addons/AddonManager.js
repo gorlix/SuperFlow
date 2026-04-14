@@ -1,59 +1,98 @@
-/**
- * @fileoverview The AddonManager orchestrates the execution of third-party Add-ons.
- * When the SpatialMappingEngine determines that a user wrote inside an Action Zone,
- * this manager routes that event to the respective Add-on's `execute()` method.
- */
+import PluginAPI from '../core/PluginAPI';
 
-class AddonManager {
+/**
+ * @class AddonManager
+ * @description In-memory registry system compiling and routing Addon execution via the JSON engine.
+ * It enforces safe execution by building the protected toolkit Payload before shipping to Addons.
+ */
+export default class AddonManager {
   /**
-   * Initializes the AddonManager registry.
+   * Instantiates an empty Addon Manager.
+   * @class
    */
   constructor() {
     /**
-     * @type {Map<string, import('./BaseAddon').default>}
-     * A map storing registered Add-ons, keyed by their unique IDs.
+     * @private
+     * @type {Map<string, object>}
      */
-    this.registry = new Map();
+    this._addons = new Map();
   }
 
   /**
-   * Registers a new Add-on into the SuperFlow ecosystem.
-   *
-   * @param {import('./BaseAddon').default} addonInstance - An instantiated subclass of BaseAddon.
-   * @returns {void}
+   * Registers a fully initialized Addon to the executing system pool.
+   * @param {object} addonInstance Concrete child class instance of BaseAddon.
+   * @throws {Error} Throws if the addon lacks a valid `id` or `execute` architecture.
    */
   registerAddon(addonInstance) {
-    if (!addonInstance || !addonInstance.id) {
-      console.warn('[AddonManager] Refused to register invalid Add-on.');
-      return;
+    // Basic duck-typing verification
+    if (
+      !addonInstance.constructor.id ||
+      typeof addonInstance.execute !== 'function'
+    ) {
+      throw new Error('Invalid Addon instance provided to AddonManager');
     }
-    this.registry.set(addonInstance.id, addonInstance);
-    console.log(`[AddonManager] Successfully registered Add-on: ${addonInstance.name} (${addonInstance.id})`);
+    this._addons.set(addonInstance.constructor.id, addonInstance);
   }
 
   /**
-   * Dispatches an execution payload to a targeted Add-on.
-   *
-   * @param {string} addonId - The ID of the Add-on to trigger.
-   * @param {Object} payload - The stroke and context data provided by the engine.
-   * @returns {Promise<boolean>} Resolves to true if dispatched successfully, false otherwise.
+   * Retrieve all registered Add-ons for UI Configuration (e.g., when the user builds a JSON template map).
+   * @returns {Array<{ id: string, name: string }>} Serialized array of addon metadata.
    */
-  async dispatchPayload(addonId, payload) {
-    const addon = this.registry.get(addonId);
+  getAvailableAddons() {
+    return Array.from(this._addons.values()).map(addon => ({
+      id: addon.constructor.id,
+      name: addon.constructor.name,
+    }));
+  }
+
+  /**
+   * Securely routes a JSON configured action command to its responsible Addon payload.
+   * Automatically isolates the Addon from dangerous global state by provisioning a DI `toolkit`.
+   * @async
+   * @param {string} addonId The unique registered ID of the module (e.g., 'core.inject_keyword').
+   * @param {object} addonParams Config settings dictating what the Addon should do (fetched from JSON).
+   * @param {object} executionContext A snapshot representing the triggering context event.
+   * @param {string} executionContext.activeFilePath The user's current note.
+   * @param {number} executionContext.currentPageNum The user's active page.
+   * @param {string} executionContext.matchedZoneId The specific Hotzone matching the strokes.
+   * @param {Array<object>} executionContext.triggerStrokes The ink geometry causing this execution.
+   * @returns {Promise<boolean>} True if action resolved cleanly.
+   */
+  async executeAction(addonId, addonParams, executionContext) {
+    const addon = this._addons.get(addonId);
+
     if (!addon) {
-      console.error(`[AddonManager] Add-on with ID '${addonId}' not found in registry.`);
+      console.error(`Attempted to execute unregistered Addon: ${addonId}`);
       return false;
     }
 
+    // Construct the Dependency Injection safe toolkit.
+    // Notice how we DO NOT pass the raw PluginAPI to prevent over-reach.
+    const safeToolkit = {
+      /**
+       *
+       * @param path
+       * @param page
+       * @param keyword
+       */
+      injectKeyword: async (path, page, keyword) => {
+        return PluginAPI.injectKeyword(path, page, keyword);
+      },
+    };
+
+    /** @type {ExecutePayload} */
+    const payload = {
+      context: executionContext,
+      toolkit: safeToolkit,
+      addonParams: addonParams,
+    };
+
     try {
-      console.log(`[AddonManager] Dispatching payload to ${addon.name}...`);
       await addon.execute(payload);
       return true;
-    } catch (error) {
-      console.error(`[AddonManager] Error executing Add-on ${addon.name}:`, error);
+    } catch (e) {
+      console.error(`Execution failed for Addon [${addonId}]: ${e.message}`);
       return false;
     }
   }
 }
-
-export default new AddonManager();
