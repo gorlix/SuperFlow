@@ -48,16 +48,46 @@ export default class PluginAPI {
    * @throws {Error} If fetching file elements fails.
    */
   static async getRawStrokes(notePath, pageIndex) {
+    console.log('[PluginAPI] Triggering saveCurrentNote before array fetch...');
+    if (PluginNoteAPI && typeof PluginNoteAPI.saveCurrentNote === 'function') {
+      try {
+        await PluginNoteAPI.saveCurrentNote();
+      } catch (e) {
+        console.warn(`[PluginAPI] saveCurrentNote failed: ${e.message}`);
+      }
+    }
+
+    console.log(
+      `[PluginAPI] getElements args -> page: ${pageIndex}, path: ${notePath}`,
+    );
     const res = await PluginFileAPI.getElements(pageIndex, notePath);
-    if (!res.success) {
+    console.log(
+      `[PluginAPI] getElements raw response: ${JSON.stringify(res).substring(
+        0,
+        300,
+      )}`,
+    );
+
+    if (!res || !res.success) {
       throw new Error(
-        `getElements failed on ${notePath}: ${res.error?.message}`,
+        `getElements failed on ${notePath}: ${
+          res?.error?.message || JSON.stringify(res)
+        }`,
       );
     }
 
+    const allElements = res.result || [];
+    console.log(`[PluginAPI] Total elements in page: ${allElements.length}`);
+
+    if (allElements.length > 0) {
+      const types = allElements.map(el => el.type).join(', ');
+      console.log(`[PluginAPI] Element types found: ${types}`);
+    }
+
     // Filter to retain only stroke elements (type === 0, or trail logic)
-    // Note: Depends on actual 'type' constant for strokes in Chauvet OS.
-    return res.result.filter(el => el.type === 0);
+    const strokes = allElements.filter(el => el.type === 0);
+    console.log(`[PluginAPI] Filtered Stroke count: ${strokes.length}`);
+    return strokes;
   }
 
   /**

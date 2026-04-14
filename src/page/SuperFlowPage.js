@@ -49,19 +49,50 @@ const SuperFlowPage = () => {
         logString += `Failed API Discovery: ${err.message}\n`;
       }
 
-      // 2. Diagnostic Stroke Call (Replacing invalid getLayerData)
-      let strokeData = [];
+      // 2. Diagnostic Stroke Call
+      logString += '--- SDK STROKE FETCH DIAGNOSTICS ---\n';
       try {
-        logString += 'Fetching strokes via PluginAPI.getRawStrokes...\n';
-        strokeData =
-          (await PluginAPI.getRawStrokes(ctx.path, ctx.pageNum)) || [];
-        logString += `Strokes retrieved: ${strokeData.length}\n`;
-        logString += `Raw Data Sample: ${JSON.stringify(strokeData).substring(
-          0,
-          150,
+        if (
+          PluginNoteAPI &&
+          typeof PluginNoteAPI.saveCurrentNote === 'function'
+        ) {
+          logString += 'Triggering saveCurrentNote()...\n';
+          await PluginNoteAPI.saveCurrentNote();
+        }
+
+        const {PluginFileAPI} = require('sn-plugin-lib');
+
+        // Test Parameters & Types
+        logString += `Path: [${ctx.path}] (Type: ${typeof ctx.path})\n`;
+        logString += `PageNum: [${
+          ctx.pageNum
+        }] (Type: ${typeof ctx.pageNum})\n`;
+
+        // Test 1: EXACT MATCH
+        const resExact = await PluginFileAPI.getElements(ctx.pageNum, ctx.path);
+        logString += `getElements(ctx.pageNum) Response Type: ${typeof resExact}, IsArray: ${Array.isArray(
+          resExact,
         )}\n`;
+        logString += `getElements(ctx.pageNum) Raw Output: ${JSON.stringify(
+          resExact || 'NULL',
+        ).substring(0, 300)}\n`;
+
+        // Test 2: PAGE INDEX + 1
+        const resNext = await PluginFileAPI.getElements(
+          ctx.pageNum + 1,
+          ctx.path,
+        );
+        logString += `getElements(ctx.pageNum + 1) Response: ${typeof resNext}, Keys: ${Object.keys(
+          resNext || {},
+        ).join(',')}\n`;
+
+        // Validation length:
+        const arr = resExact && resExact.result ? resExact.result : [];
+        logString += `Valid result array length: ${
+          Array.isArray(arr) ? arr.length : 'Not an Array'
+        }\n`;
       } catch (err) {
-        logString += `Failed to get strokes: ${err.message}\n`;
+        logString += `Diagnostic execution failed: ${err.message}\n`;
       }
 
       await SpatialMappingEngine.processActivePage();
