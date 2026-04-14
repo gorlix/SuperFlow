@@ -14,6 +14,7 @@ export function createTestPayload(addonParams = {}, configOptions = {}) {
     },
     toolkit: {
       injectKeyword: jest.fn().mockResolvedValue(true),
+      injectTitle: jest.fn().mockResolvedValue(true),
     },
     addonParams,
   };

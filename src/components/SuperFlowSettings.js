@@ -56,6 +56,30 @@ const DynamicAddonForm = ({addonMeta, onSave, onCancel}) => {
               </View>
             );
           }
+          if (field.type === 'boolean') {
+            const isToggled = !!formData[field.key];
+            return (
+              <View key={field.key} style={styles.fieldContainer}>
+                <Text style={styles.label}>{field.label}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleBox,
+                    isToggled && styles.toggleBoxActive,
+                  ]}
+                  onPress={() =>
+                    setFormData({...formData, [field.key]: !isToggled})
+                  }>
+                  <Text
+                    style={[
+                      styles.toggleText,
+                      isToggled && styles.toggleTextActive,
+                    ]}>
+                    {isToggled ? t('ui_yes', 'YES') : t('ui_no', 'NO')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          }
           return null;
         })}
 
@@ -385,5 +409,23 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  toggleBox: {
+    borderWidth: 2,
+    borderColor: '#000000',
+    padding: 12,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+  },
+  toggleBoxActive: {
+    backgroundColor: '#000000',
+  },
+  toggleText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  toggleTextActive: {
+    color: '#ffffff',
   },
 });
