@@ -36,13 +36,29 @@ const SuperFlowPage = () => {
       const ctx = await PluginAPI.getActiveContext();
       logString += `Context OK. Path: ${ctx.path}\n`;
 
-      // Debug Goal: Understand if the API is returning data from the Note page.
-      const layerData = await PluginNoteAPI.getLayerData(ctx.path, ctx.pageNum);
-      logString += `PluginNoteAPI.getLayerData() returned: ${
-        layerData
-          ? JSON.stringify(layerData).substring(0, 500)
-          : 'null/undefined'
-      }\n`;
+      // 1. SDK API Discovery (Critical)
+      try {
+        logString +=
+          'Available API methods: ' +
+          Object.keys(PluginNoteAPI || {}).join(', ') +
+          '\n';
+      } catch (err) {
+        logString += `Failed API Discovery: ${err.message}\n`;
+      }
+
+      // 2. Null-Safety Guardrails
+      let layerData = [];
+      if (PluginNoteAPI && typeof PluginNoteAPI.getLayerData === 'function') {
+        const rawData = await PluginNoteAPI.getLayerData(ctx.path, ctx.pageNum);
+        layerData = rawData || [];
+      } else {
+        logString +=
+          'SKIPPING PluginNoteAPI.getLayerData: Method is undefined.\n';
+      }
+      logString +=
+        'LayerData received: ' +
+        JSON.stringify(layerData).substring(0, 100) +
+        '\n';
 
       await SpatialMappingEngine.processActivePage();
       logString += 'Mapping completed.\n';
