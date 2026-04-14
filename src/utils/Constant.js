@@ -1,3 +1,5 @@
+import {NativePluginManager} from 'sn-plugin-lib';
+
 const Constant = {
   maxInputNum: 20,
 
@@ -15,9 +17,6 @@ const Constant = {
     }
 
     try {
-      // Dynamically import NativePluginManager
-      const { NativePluginManager } = require('sn-plugin-lib');
-
       // Fetch plugin path and cache it
       this._pluginPathCache = await NativePluginManager.getPluginDirPath();
       return this._pluginPathCache;

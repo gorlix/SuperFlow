@@ -5,13 +5,13 @@
 
 import {AppRegistry, Image} from 'react-native';
 import {name as appName} from './app.json';
-import SuperFlowPage from './src/page/SuperFlowPage';
+import App from './App';
 import './src/i18n';
 
 import {PluginManager} from 'sn-plugin-lib';
 
 // Register the root component UI for Supernote mapping layer.
-AppRegistry.registerComponent(appName, () => SuperFlowPage);
+AppRegistry.registerComponent(appName, () => App);
 
 // Initialize SDK interactions.
 PluginManager.init();
@@ -20,7 +20,7 @@ PluginManager.init();
 // i18n JSON strings are passed directly formatted as expected by the Chauvet OS.
 PluginManager.registerButton(
   1, // Main Button ID
-  [], // No sub-buttons for now
+  ['NOTE', 'DOC'], // Array context mapping
   {
     id: 100,
     name:
@@ -31,7 +31,7 @@ PluginManager.registerButton(
       '    "ja":"SuperFlow"\n' +
       '  }',
     color: 0xffffff,
-    icon: Image.resolveAssetSource(require('./assets/icon.png')).uri,
+    icon: Image.resolveAssetSource(require('./assets/icon/icon.png')).uri,
     bgColor: 0x000000,
     expandMenuItem: 0,
   },
