@@ -1,7 +1,8 @@
 # 🌊 SuperFlow for Supernote
 
 > **Platform:** Supernote (Chauvet OS / React Native SDK)
-> **Version:** 0.1.0 — _Core Architecture Milestone_ > **License:** MIT
+> **Version:** 0.1.0-alpha
+> **License:** MIT
 
 SuperFlow is an open-source automation plugin for the Supernote e-ink tablet. It bridges the gap between analog handwriting and digital workflows by turning ordinary areas of your notes into **Dynamic Action Zones (Hotzones)**—without adding any UI clutter to your daily writing experience, and with **zero impact on ink latency**.
 
