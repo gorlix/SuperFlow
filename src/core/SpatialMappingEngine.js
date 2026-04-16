@@ -49,6 +49,17 @@ class SpatialMappingEngine {
    * @returns {Promise<void>} Resolves when all mapped zone actions are sequentially processed.
    */
   async processActivePage() {
+    const diag = {
+      exit: 'unknown',
+      templateName: null,
+      configFound: false,
+      hotzoneCount: 0,
+      strokesFound: 0,
+      zonesMatched: 0,
+      actionsDispatched: 0,
+      error: null,
+    };
+
     try {
       // 1. Context Logging
       console.log(
@@ -58,11 +69,13 @@ class SpatialMappingEngine {
 
       // 2. Map Resolving
       const templateName = this._extractTemplateName(ctx.path);
+      diag.templateName = templateName;
       if (!templateName) {
         console.warn(
           '[SpatialMappingEngine] Active file string is malformed or invalid.',
         );
-        return;
+        diag.exit = 'bad_path';
+        return diag;
       }
 
       console.log(
@@ -74,16 +87,23 @@ class SpatialMappingEngine {
         console.info(
           `[SpatialMappingEngine] Clean exit. No mapped configuration exists for ${templateName}.json`,
         );
-        return;
+        diag.exit = 'no_config';
+        return diag;
       }
+
+      diag.configFound = true;
+      diag.hotzoneCount = config.hotzones.length;
 
       // 3. Raw Data Pulling
       const rawStrokes = await PluginAPI.getRawStrokes(ctx.path, ctx.pageNum);
+      diag.strokesFound = rawStrokes.length;
+
       if (rawStrokes.length === 0) {
         console.info(
           '[SpatialMappingEngine] Page ink context is completely blank. Halting execution.',
         );
-        return;
+        diag.exit = 'no_strokes';
+        return diag;
       }
 
       const normalizedStrokes = rawStrokes.map(TemplateParser.normalizeStroke);
@@ -96,6 +116,7 @@ class SpatialMappingEngine {
         );
 
         if (intersectingStrokes.length > 0) {
+          diag.zonesMatched++;
           console.log(
             `[SpatialMappingEngine] ✅ Detected ${intersectingStrokes.length} stroke(s) spanning inside Zone [${zone.id}]`,
           );
@@ -116,6 +137,7 @@ class SpatialMappingEngine {
             console.log(
               `[SpatialMappingEngine] ⚙️ Executing Addon Payload => ${actionConfig.id}`,
             );
+            diag.actionsDispatched++;
 
             // Execute safely isolated in AddonManager Singleton proxy.
             await AddonManager.executeAction(
@@ -127,14 +149,19 @@ class SpatialMappingEngine {
         }
       }
 
+      diag.exit = 'done';
       console.log(
         '[SpatialMappingEngine] 🏁 Processing complete. Zero-latency manual iteration finished.',
       );
     } catch (e) {
+      diag.exit = 'error';
+      diag.error = e.message;
       console.error(
         `[CRITICAL] SpatialMappingEngine encountered a fatal error during Process Phase: ${e.message}`,
       );
     }
+
+    return diag;
   }
 }
 

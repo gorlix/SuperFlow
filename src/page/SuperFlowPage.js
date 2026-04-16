@@ -53,8 +53,14 @@ const SuperFlowPage = () => {
       // Flow directly into SpatialMappingEngine
       // PluginAPI.getRawStrokes is called inside SpatialMappingEngine.processActivePage
 
-      await SpatialMappingEngine.processActivePage();
-      logString += 'Mapping completed.\n';
+      const diag = await SpatialMappingEngine.processActivePage();
+      logString += `Mapping result: exit=${diag.exit} template=${
+        diag.templateName
+      } configFound=${diag.configFound} hotzones=${diag.hotzoneCount} strokes=${
+        diag.strokesFound
+      } zonesMatched=${diag.zonesMatched} actionsDispatched=${
+        diag.actionsDispatched
+      }${diag.error ? ' error=' + diag.error : ''}\n`;
     } catch (e) {
       logString += `Mapping Error: ${e.message}\nStack: ${e.stack}\n`;
       console.error('[SuperFlowPage] Process Error:', e);
@@ -80,10 +86,23 @@ const SuperFlowPage = () => {
       console.log('[SuperFlowPage] Switching to Learn Protocol.');
 
       const ctx = await PluginAPI.getActiveContext();
-      logString += `Context OK. Path: ${ctx.path}\n`;
+      logString += `Context OK. Path: ${ctx.path} | pageNum: ${ctx.pageNum}\n`;
+
+      // Pre-filter diagnostic: see all elements before type===700 gate
+      const allElements = await PluginAPI.getRawAllElements(
+        ctx.path,
+        ctx.pageNum,
+      );
+      const typeMap = allElements.reduce((acc, el) => {
+        acc[el.type] = (acc[el.type] || 0) + 1;
+        return acc;
+      }, {});
+      logString += `All elements (no filter): ${
+        allElements.length
+      } | types: ${JSON.stringify(typeMap)}\n`;
 
       const rawStrokes = await PluginAPI.getRawStrokes(ctx.path, ctx.pageNum);
-      logString += `Raw strokes fetched: ${rawStrokes.length}\n`;
+      logString += `Raw strokes (type=700): ${rawStrokes.length}\n`;
 
       if (rawStrokes.length > 0) {
         let minX = Infinity,
