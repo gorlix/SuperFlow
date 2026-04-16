@@ -19,6 +19,28 @@ describe('TemplateParser', () => {
     });
   });
 
+  it('normalizes Chauvet OS type-700 ink element (recognizeResult path)', () => {
+    const chauvetStroke = {
+      type: 700,
+      angles: {
+        contoursSrc: {
+          recognizeResult: {
+            up_left_point_x: 46,
+            up_left_point_y: 168,
+            down_right_point_x: 1758,
+            down_right_point_y: 170,
+          },
+        },
+      },
+    };
+    expect(TemplateParser.normalizeStroke(chauvetStroke)).toEqual({
+      x: 46,
+      y: 168,
+      width: 1712,
+      height: 2,
+    });
+  });
+
   it('clusters intersecting/proximate strokes via Union-Find and applies proper padding', () => {
     const strokes = [
       {x: 10, y: 10, width: 100, height: 5}, // Top edge
@@ -39,6 +61,68 @@ describe('TemplateParser', () => {
     const smallDot = [{x: 50, y: 50, width: 5, height: 5}];
     const zones = TemplateParser.extractHotzones(smallDot);
     expect(zones.length).toBe(0);
+  });
+
+  it('clusters Chauvet type-700 strokes forming a rectangle using recognizeResult coords', () => {
+    // Mirrors the real flowtest.note large rectangle: full-width bar near top of page.
+    // Top edge y≈168, bottom edge y≈328 (gap=158 < PROXIMITY_THRESHOLD=300).
+    const chauvetRect = [
+      {
+        type: 700,
+        angles: {
+          contoursSrc: {
+            recognizeResult: {
+              up_left_point_x: 46,
+              up_left_point_y: 168,
+              down_right_point_x: 1758,
+              down_right_point_y: 170,
+            },
+          },
+        },
+      }, // top
+      {
+        type: 700,
+        angles: {
+          contoursSrc: {
+            recognizeResult: {
+              up_left_point_x: 46,
+              up_left_point_y: 326,
+              down_right_point_x: 1758,
+              down_right_point_y: 328,
+            },
+          },
+        },
+      }, // bottom
+      {
+        type: 700,
+        angles: {
+          contoursSrc: {
+            recognizeResult: {
+              up_left_point_x: 46,
+              up_left_point_y: 168,
+              down_right_point_x: 48,
+              down_right_point_y: 328,
+            },
+          },
+        },
+      }, // left
+      {
+        type: 700,
+        angles: {
+          contoursSrc: {
+            recognizeResult: {
+              up_left_point_x: 1756,
+              up_left_point_y: 168,
+              down_right_point_x: 1758,
+              down_right_point_y: 328,
+            },
+          },
+        },
+      }, // right
+    ];
+    const zones = TemplateParser.extractHotzones(chauvetRect);
+    expect(zones.length).toBe(1);
+    expect(zones[0].width).toBeGreaterThan(1700);
   });
 
   it('clusters sparse rectangle edges where opposite sides have large pen-lift gaps', () => {

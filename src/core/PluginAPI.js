@@ -48,25 +48,64 @@ export default class PluginAPI {
    * @throws {Error} If fetching file elements fails.
    */
   static async getRawStrokes(notePath, pageIndex) {
+    let saveStatus = 'skipped';
     if (PluginNoteAPI && typeof PluginNoteAPI.saveCurrentNote === 'function') {
       try {
         await PluginNoteAPI.saveCurrentNote();
+        saveStatus = 'ok';
       } catch (e) {
+        saveStatus = `failed: ${e.message}`;
         console.warn(`[PluginAPI] saveCurrentNote failed: ${e.message}`);
       }
     }
 
     const response = await PluginFileAPI.getElements(pageIndex, notePath);
-    const allElements =
+    const rawResult =
       response && Array.isArray(response.result) ? response.result : [];
 
-    // Filter to retain only stroke elements (type === 0, or trail logic)
-    const strokes = allElements.filter(el => el.type === 0);
+    // ElementDataAccessor objects from the native bridge do not support plain
+    // property access. Materializing via JSON round-trip creates plain JS objects
+    // where nested paths (angles.contoursSrc.recognizeResult etc.) are accessible.
+    const allElements = rawResult.map(el => {
+      try {
+        return JSON.parse(JSON.stringify(el));
+      } catch (_) {
+        return el;
+      }
+    });
+
+    // Filter to retain only stroke elements. Chauvet OS reports ink strokes as type 700.
+    const strokes = allElements.filter(el => el.type === 700);
+    const typeMap = allElements.reduce((acc, el) => {
+      acc[el.type] = (acc[el.type] || 0) + 1;
+      return acc;
+    }, {});
     console.log(
-      `SuperFlow: Successfully retrieved ${strokes.length} elements from page ${pageIndex}.`,
+      `[PluginAPI] saveCurrentNote=${saveStatus} | page=${pageIndex} | allElements=${
+        allElements.length
+      } types=${JSON.stringify(typeMap)} | strokes(type=0)=${strokes.length}`,
     );
 
     return strokes;
+  }
+
+  /**
+   * Diagnostic-only: returns ALL elements from a page without type filtering.
+   * Used to surface raw SDK response data (type distribution, total count) to
+   * the device log for debugging zero-stroke scenarios.
+   * @async
+   * @param {string} notePath Absolute path to the .note file.
+   * @param {number} pageIndex 0-indexed page number.
+   * @returns {Promise<Array<object>>} All raw element objects before any filtering.
+   */
+  static async getRawAllElements(notePath, pageIndex) {
+    try {
+      const response = await PluginFileAPI.getElements(pageIndex, notePath);
+      return response && Array.isArray(response.result) ? response.result : [];
+    } catch (e) {
+      console.error(`[PluginAPI] getRawAllElements failed: ${e.message}`);
+      return [];
+    }
   }
 
   /**

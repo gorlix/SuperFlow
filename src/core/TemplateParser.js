@@ -26,7 +26,7 @@ export default class TemplateParser {
    * Distance in pixels that two strokes can be apart and still cluster together.
    * Helps bridge gaps from pen lifts at corners.
    */
-  static PROXIMITY_THRESHOLD = 200;
+  static PROXIMITY_THRESHOLD = 300;
 
   /**
    * Minimum valid width for a Zone to avoid small noise artifacts.
@@ -50,7 +50,40 @@ export default class TemplateParser {
    * @returns {NormalizedRect} Standardized rect geometry.
    */
   static normalizeStroke(rawStroke) {
-    // Chauvet typically nests in .rect or uses flat X, Y uppercase
+    if (!rawStroke) {
+      return {x: 0, y: 0, width: 0, height: 0};
+    }
+
+    // Path A: top-level recognizeResult (per SDK Element spec — common field on all elements)
+    const rrTop = rawStroke.recognizeResult;
+    if (rrTop && rrTop.up_left_point_x != null) {
+      const x = rrTop.up_left_point_x;
+      const y = rrTop.up_left_point_y;
+      return {
+        x,
+        y,
+        width: rrTop.down_right_point_x - x,
+        height: rrTop.down_right_point_y - y,
+      };
+    }
+
+    // Path B: nested in angles.contoursSrc.recognizeResult (observed in JSON dump of Chauvet OS type-700 element)
+    const rrNested =
+      rawStroke.angles &&
+      rawStroke.angles.contoursSrc &&
+      rawStroke.angles.contoursSrc.recognizeResult;
+    if (rrNested && rrNested.up_left_point_x != null) {
+      const x = rrNested.up_left_point_x;
+      const y = rrNested.up_left_point_y;
+      return {
+        x,
+        y,
+        width: rrNested.down_right_point_x - x,
+        height: rrNested.down_right_point_y - y,
+      };
+    }
+
+    // Path C: legacy flat/nested formats (tests and older SDK versions)
     const rectSource = rawStroke.rect || rawStroke || {};
     return {
       x: typeof rectSource.x === 'number' ? rectSource.x : rectSource.X || 0,
