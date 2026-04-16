@@ -75,13 +75,45 @@ const SuperFlowPage = () => {
    * Bridges to the Settings Interface (Phase 3 & 4 binding config mode).
    */
   const handleLearnTemplate = async () => {
+    let logString = '\n--- LEARN TEMPLATE TRIGGERED ---\n';
     try {
       console.log('[SuperFlowPage] Switching to Learn Protocol.');
 
       const ctx = await PluginAPI.getActiveContext();
+      logString += `Context OK. Path: ${ctx.path}\n`;
+
       const rawStrokes = await PluginAPI.getRawStrokes(ctx.path, ctx.pageNum);
+      logString += `Raw strokes fetched: ${rawStrokes.length}\n`;
+
+      if (rawStrokes.length > 0) {
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+        rawStrokes.forEach((s, i) => {
+          const ns = TemplateParser.normalizeStroke(s);
+          logString += `  Stroke[${i}]: x=${ns.x} y=${ns.y} w=${ns.width} h=${ns.height}\n`;
+          if (ns.x < minX) {
+            minX = ns.x;
+          }
+          if (ns.y < minY) {
+            minY = ns.y;
+          }
+          if (ns.x + ns.width > maxX) {
+            maxX = ns.x + ns.width;
+          }
+          if (ns.y + ns.height > maxY) {
+            maxY = ns.y + ns.height;
+          }
+        });
+        logString += `  Envelope: minX=${minX} minY=${minY} maxX=${maxX} maxY=${maxY}\n`;
+      }
 
       const parsedZones = TemplateParser.extractHotzones(rawStrokes);
+      logString += `Zones detected: ${parsedZones.length}\n`;
+      parsedZones.forEach((z, i) => {
+        logString += `  Zone[${i}]: id=${z.id} x=${z.x} y=${z.y} w=${z.width} h=${z.height}\n`;
+      });
 
       const rawFileName = ctx.path.split('/').pop() || 'Untitled';
       const templateName = rawFileName.replace(/\.[^/.]+$/, '');
@@ -90,7 +122,17 @@ const SuperFlowPage = () => {
 
       setCurrentView('settings');
     } catch (e) {
+      logString += `Learn Error: ${e.message}\nStack: ${e.stack}\n`;
       console.error('[SuperFlowPage] Learn initialization failed: ', e.message);
+    } finally {
+      try {
+        const logDir = `${RNFS.ExternalStorageDirectoryPath}/MyStyle/Plugins`;
+        const logFile = `${logDir}/SuperFlow_Log.txt`;
+        await RNFS.mkdir(logDir);
+        await RNFS.appendFile(logFile, logString, 'utf8');
+      } catch (fsErr) {
+        console.warn('Failed to append learn log:', fsErr);
+      }
     }
   };
 

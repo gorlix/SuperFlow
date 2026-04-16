@@ -26,17 +26,17 @@ export default class TemplateParser {
    * Distance in pixels that two strokes can be apart and still cluster together.
    * Helps bridge gaps from pen lifts at corners.
    */
-  static PROXIMITY_THRESHOLD = 30;
+  static PROXIMITY_THRESHOLD = 200;
 
   /**
    * Minimum valid width for a Zone to avoid small noise artifacts.
    */
-  static MIN_ZONE_WIDTH = 80;
+  static MIN_ZONE_WIDTH = 40;
 
   /**
    * Minimum valid height for a Zone to avoid small noise artifacts.
    */
-  static MIN_ZONE_HEIGHT = 80;
+  static MIN_ZONE_HEIGHT = 40;
 
   /**
    * Padding to safely expand the final Bounding Box footprint.
