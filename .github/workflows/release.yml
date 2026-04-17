@@ -1,0 +1,68 @@
+name: Release Plugin
+
+# Triggered by pushing a tag in the form release/v<N> (e.g. release/v0.5).
+# Builds the .snplg package via buildPlugin.sh and publishes a GitHub Release.
+on:
+  push:
+    tags:
+      - 'release/v*'
+
+# write permission is required to create the GitHub Release
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & Publish .snplg
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Extract the version number from the tag.
+      # Tag format:  release/v0.5
+      # → version:   v0.5
+      # → filename:  SuperFlow-v0.5.snplg
+      - name: Extract version from tag
+        id: meta
+        run: |
+          VERSION="${GITHUB_REF_NAME#release/}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "filename=SuperFlow-${VERSION}.snplg" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # buildPlugin.sh bundles the JS with react-native bundle and packages
+      # everything into build/outputs/<name>.snplg.
+      # If a native Android build is attempted and fails (no Gradle in CI),
+      # the script continues and produces a JS-only package — which is correct
+      # for Supernote plugins since native libraries live on the device.
+      - name: Build plugin package
+        run: bash buildPlugin.sh
+
+      - name: Locate and rename artifact
+        id: artifact
+        run: |
+          SNPLG=$(find build/outputs -name "*.snplg" | head -1)
+          if [ -z "$SNPLG" ]; then
+            echo "::error::No .snplg file found in build/outputs — build may have failed"
+            exit 1
+          fi
+          DEST="build/outputs/${{ steps.meta.outputs.filename }}"
+          mv "$SNPLG" "$DEST"
+          echo "path=${DEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "SuperFlow ${{ steps.meta.outputs.version }}"
+          files: ${{ steps.artifact.outputs.path }}
+          generate_release_notes: true
