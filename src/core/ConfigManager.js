@@ -70,6 +70,40 @@ class ConfigManager {
   }
 
   /**
+   * Loads an existing saved config back into the draft for editing.
+   * Unlike initializeDraft (which wipes actions), this preserves the full
+   * zone geometry AND all previously mapped actions so the user can modify them.
+   * @param {string} templateName Root filename of the config being edited.
+   * @param {object} config The parsed JSON config object from storage.
+   * @param {Array<ZoneConfig>} config.hotzones The zones with their existing action mappings.
+   * @throws {Error} If templateName or config are invalid.
+   */
+  loadDraftFromConfig(templateName, config) {
+    if (!templateName || typeof templateName !== 'string') {
+      throw new Error(
+        'loadDraftFromConfig requires a valid string templateName',
+      );
+    }
+    if (!config || !Array.isArray(config.hotzones)) {
+      throw new Error(
+        'loadDraftFromConfig requires a valid config with a hotzones array',
+      );
+    }
+
+    this._draftState = {
+      templateName,
+      hotzones: config.hotzones.map(zone => ({
+        ...zone,
+        actions: Array.isArray(zone.actions) ? zone.actions : [],
+      })),
+    };
+
+    console.log(
+      `[ConfigManager] Draft loaded from saved config [${templateName}] — ${this._draftState.hotzones.length} zones with existing mappings.`,
+    );
+  }
+
+  /**
    * Resets the entire internal draft memory to prevent rogue state spillage
    * onto subsequent executions or templates.
    */
