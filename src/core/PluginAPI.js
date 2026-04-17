@@ -44,10 +44,12 @@ export default class PluginAPI {
    * @async
    * @param {string} notePath Absolute path to the .note file.
    * @param {number} pageIndex 0-indexed page number.
+   * @param {number} [elementType] Element type to filter: 700 = geometric shapes (zone outlines),
+   *   0 = freehand ink strokes (user handwriting inside zones).
    * @returns {Promise<Array<object>>} List of valid stroke payload objects.
    * @throws {Error} If fetching file elements fails.
    */
-  static async getRawStrokes(notePath, pageIndex) {
+  static async getRawStrokes(notePath, pageIndex, elementType = 700) {
     let saveStatus = 'skipped';
     if (PluginNoteAPI && typeof PluginNoteAPI.saveCurrentNote === 'function') {
       try {
@@ -74,8 +76,10 @@ export default class PluginAPI {
       }
     });
 
-    // Filter to retain only stroke elements. Chauvet OS reports ink strokes as type 700.
-    const strokes = allElements.filter(el => el.type === 700);
+    // Filter to the requested element type.
+    // type=700: geometric shapes (zone outlines, used by Learn Template)
+    // type=0:   freehand ink strokes (user handwriting, used by Process)
+    const strokes = allElements.filter(el => el.type === elementType);
     const typeMap = allElements.reduce((acc, el) => {
       acc[el.type] = (acc[el.type] || 0) + 1;
       return acc;
@@ -83,7 +87,9 @@ export default class PluginAPI {
     console.log(
       `[PluginAPI] saveCurrentNote=${saveStatus} | page=${pageIndex} | allElements=${
         allElements.length
-      } types=${JSON.stringify(typeMap)} | strokes(type=0)=${strokes.length}`,
+      } types=${JSON.stringify(typeMap)} | strokes(type=${elementType})=${
+        strokes.length
+      }`,
     );
 
     return strokes;
@@ -158,6 +164,49 @@ export default class PluginAPI {
   }
 
   /**
+   * Lists all available template config names from the configs directory.
+   * @async
+   * @returns {Promise<Array<string>>} Array of template base names (without .json extension).
+   */
+  static async listTemplateConfigs() {
+    try {
+      const configDir = `${RNFS.ExternalStorageDirectoryPath}/MyStyle/template/configs`;
+      const exists = await RNFS.exists(configDir);
+      if (!exists) {
+        return [];
+      }
+      const items = await RNFS.readDir(configDir);
+      return items
+        .filter(item => item.isFile() && item.name.endsWith('.json'))
+        .map(item => item.name.replace(/\.json$/, ''));
+    } catch (e) {
+      console.error(`[PluginAPI] listTemplateConfigs failed: ${e.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Permanently deletes a saved template config from storage.
+   * @async
+   * @param {string} templateName Base config name to remove (e.g., "Meeting").
+   * @returns {Promise<boolean>} True if the file was deleted or did not exist.
+   */
+  static async deleteConfig(templateName) {
+    try {
+      const configPath = this._getConfigPath(templateName);
+      const exists = await RNFS.exists(configPath);
+      if (!exists) {
+        return true;
+      }
+      await RNFS.unlink(configPath);
+      return true;
+    } catch (e) {
+      console.error(`[PluginAPI] deleteConfig failed: ${e.message}`);
+      return false;
+    }
+  }
+
+  /**
    * Injects a keyword tag securely into the given note.
    * @async
    * @param {string} notePath Absolute target file path.
@@ -171,15 +220,23 @@ export default class PluginAPI {
   }
 
   /**
-   * Injects a Title or Heading securely into the given note.
+   * Injects a Title text box into the currently active note page.
    * @async
-   * @param {string} notePath Absolute target file path.
-   * @param {number} page 0-based page index.
-   * @param {string} titleText The text to inject as title.
+   * @param {string} notePath Accepted for API symmetry with injectKeyword — not forwarded.
+   *   The SDK's insertText operates on the current view; there is no file-addressed text API.
+   * @param {number} page Accepted for API symmetry — not forwarded (see above).
+   * @param _page
+   * @param _notePath
+   * @param {string} titleText The text content to insert.
    * @returns {Promise<boolean>} True if successfully injected.
    */
-  static async injectTitle(notePath, page, titleText) {
-    const res = await PluginNoteAPI.setTitle(notePath, page, titleText);
-    return res.success === true;
+  static async injectTitle(_notePath, _page, titleText) {
+    const res = await PluginNoteAPI.insertText({
+      textContentFull: titleText,
+      textRect: {left: 50, top: 50, right: 1354, bottom: 200},
+      fontSize: 36,
+      textBold: 1,
+    });
+    return !!(res && res.success);
   }
 }
