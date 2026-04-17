@@ -55,7 +55,7 @@ describe('SpatialMappingEngine', () => {
       {X: 500, Y: 500, Width: 10, Height: 10},
     ]);
 
-    await SpatialMappingEngine.processActivePage();
+    await SpatialMappingEngine.processActivePage('Test');
 
     expect(AddonManager.executeAction).toHaveBeenCalledTimes(1);
     expect(AddonManager.executeAction).toHaveBeenCalledWith(

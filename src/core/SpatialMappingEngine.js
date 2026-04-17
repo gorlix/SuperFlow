@@ -42,16 +42,17 @@ class SpatialMappingEngine {
 
   /**
    * Brain function for the entire "Process Phase" of SuperFlow.
-   * Intended to be invoked directly from the floating widget sidebar when user completes their page.
-   * Resolves the environment context, fetches mapped logic dynamically, parses on-page ink elements
-   * and routes intersections logically into isolated Addons via the manager Singleton.
+   * Processes the active page against a previously learned template config.
+   * The current file provides the ink strokes; the template JSON provides the zone geometry.
+   * These are intentionally decoupled — the note being processed is never the template itself.
    * @async
-   * @returns {Promise<void>} Resolves when all mapped zone actions are sequentially processed.
+   * @param {string} templateName The base name of the template config to apply (e.g. "flowtest").
+   * @returns {Promise<object>} Diagnostic object describing the outcome.
    */
-  async processActivePage() {
+  async processActivePage(templateName) {
     const diag = {
       exit: 'unknown',
-      templateName: null,
+      templateName: templateName || null,
       configFound: false,
       hotzoneCount: 0,
       strokesFound: 0,
@@ -61,20 +62,16 @@ class SpatialMappingEngine {
     };
 
     try {
-      // 1. Context Logging
+      // 1. Context — current note path + page (NOT the template file)
       console.log(
         '[SpatialMappingEngine] 🚀 Commencing Process Phase execution...',
       );
       const ctx = await PluginAPI.getActiveContext();
 
-      // 2. Map Resolving
-      const templateName = this._extractTemplateName(ctx.path);
-      diag.templateName = templateName;
+      // 2. Template resolving — name supplied by caller, not derived from ctx.path
       if (!templateName) {
-        console.warn(
-          '[SpatialMappingEngine] Active file string is malformed or invalid.',
-        );
-        diag.exit = 'bad_path';
+        console.warn('[SpatialMappingEngine] No template name provided.');
+        diag.exit = 'no_template';
         return diag;
       }
 
@@ -95,7 +92,13 @@ class SpatialMappingEngine {
       diag.hotzoneCount = config.hotzones.length;
 
       // 3. Raw Data Pulling
-      const rawStrokes = await PluginAPI.getRawStrokes(ctx.path, ctx.pageNum);
+      // Fetch freehand ink (type=0): these are the strokes the user wrote inside the zones.
+      // Zone outlines are type=700 and were already handled during Learn Template.
+      const rawStrokes = await PluginAPI.getRawStrokes(
+        ctx.path,
+        ctx.pageNum,
+        0,
+      );
       diag.strokesFound = rawStrokes.length;
 
       if (rawStrokes.length === 0) {
